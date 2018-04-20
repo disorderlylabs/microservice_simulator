@@ -1,5 +1,6 @@
 harness.py, when run, will perform 100 experiments in which a random graph is created and then brute force and LDFI experiments are run on it.
 
+you will need to install graphviz, pulp, and pycosat.
 
     git clone https://github.com/palvaro/ldfi-py.git
 
