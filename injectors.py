@@ -10,14 +10,14 @@ class RandomFaultInjector:
         
     def next_fault(self, target):
         faults = []
-        prob = float(target) / float(len(self.graph.nodeset()))
+        prob = (float(target) / float(len(self.graph.nodeset())))
         #print "PROB " + str(prob)
         for n in self.graph.nodeset():
             # oh man I suck at this
             roll = random.uniform(0, 1)
-            print "roll is " + str(roll) 
+            #print "roll is " + str(roll) 
             if roll <= prob:
-                print "YAY"
+                #print "YAY"
                 faults.append(n.label)
             #else:
                 #print "sorry, " + str(roll) + " > " + str(prob)

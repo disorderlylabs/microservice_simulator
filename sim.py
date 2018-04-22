@@ -5,7 +5,7 @@
 from graphviz import Digraph
 from itertools import *
 
-import random
+import random, copy
 
     
 
@@ -54,6 +54,18 @@ class CallTree():
             print "no root alternatives, please"
         else:
             self.alternative = alternative
+
+    def inject_new(self, faultset):
+        # new design: return the resulting call tree or None if it failed.
+        # do NOT side-effect on faultset; instead, operate on a deep copy of it.
+    
+        # whoa is this a thing
+        new_tree = copy.deepcopy(self)
+
+        if new_tree.inject(faultset):
+            return None
+        else:
+            return new_tree
         
 
     def inject(self, faultset):

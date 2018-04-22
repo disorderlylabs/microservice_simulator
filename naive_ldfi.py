@@ -40,8 +40,11 @@ class NaiveLDFI():
         #print "FORMO " + str(formula)
         cnf = CNFFormula(formula)
 
+        #print "FORMO " + str(formula)
+        #print "clauses " + str(len(cnf.conjuncts()))
 
         s = ldfi_py.pilp.Solver(cnf)
+        #s = ldfi_py.psat.Solver(cnf)
         crs = s.solutions()
         #for s in crs:
         #    print "ESS " + str(s)
