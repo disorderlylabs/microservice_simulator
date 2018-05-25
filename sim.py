@@ -7,7 +7,7 @@ from itertools import *
 
 import random, copy
 
-    
+
 
 
 class CallGraph():
@@ -20,14 +20,11 @@ class CallTree():
         self.label = label
         self.children = set()
         self.optional = optional
-        #self.alternative = alternative
-        #self.add_alternative(alternative)
         if self.parent is None:
-            #print "no root alternatives, please"
             self.alternative = None
         else:
             self.alternative = alternative
-    
+
         if parent is not None:
             parent.add_child(self)
 
@@ -58,7 +55,7 @@ class CallTree():
     def inject_new(self, faultset):
         # new design: return the resulting call tree or None if it failed.
         # do NOT side-effect on faultset; instead, operate on a deep copy of it.
-    
+
         # whoa is this a thing
         new_tree = copy.deepcopy(self)
 
@@ -66,7 +63,7 @@ class CallTree():
             return None
         else:
             return new_tree
-        
+
 
     def inject(self, faultset):
         #print "inject " + str(faultset) + " at " + str(self)
@@ -93,7 +90,7 @@ class CallTree():
         else:
             #print "OH BOYa " + str(not self.optional)
             return not self.optional
-        
+
 
 
     def bottom(self):
@@ -108,25 +105,80 @@ class CallTree():
         else:
             return self.parent.depth() + 1
 
-    def to_dot(self):
+    def print_graph(self):
+        print self.label
+        print "Children:"
+        for child in self.children:
+            print child.label
+        for child in self.children:
+            child.print_graph()
+
+    '''
+    This function renders the generated graph to dot
+    Arguments
+    alternates: set to True to display alternate paths in case of failure of service instance
+    '''
+    def to_dot(self, alternates=False):
         dot = Digraph("CallGraph", format = "pdf")
-        for node in self.nodeset():
-            if node.optional:
-                #print "it's optiona"
-                #shap = "oval"
-                clr = "grey"
-            else:
-                #shap = "doublecircle"
-                clr = "black"
-            #dot.node(node.label, shape=shap)
-            dot.node(node.label, color = clr)
-        dot.edges(self.edgeset())
+
+        # No alternates are displayed
+        # active_nodeset retruns no alternate nodes,
+        # edgeset() has alternates set to False by default
+        if not alternates:
+            for node in self.active_nodeset():
+                if node.optional:
+                    clr = "grey"
+                else:
+                    clr = "black"
+                dot.node(node.label, color = clr)
+            dot.edges(self.edgeset())
+        else:
+        # To logic here is to define subgraphs for all nodes and their alternatives to have the
+        # same rank. Since the alternative has the original service node as parent, we use the
+        # 'processed' variable to keep track of the nodes which have been processed so far
+            num = 1
+            children = [ self ]
+            processed = []
+            while len(children) > 0:
+                node = children.pop(0)
+                while node in processed and len(children)>0:
+                    node = children.pop(0)
+
+                if len(children)==0 and node in processed:
+                    break
+
+                sname = 'subgraph' + str(num)
+                s = Digraph(sname)
+                s.attr('graph', rank='same')
+
+                while node is not None:
+                    if node.optional:
+                        clr = "grey"
+                    else:
+                        clr = "black"
+                    s.node(node.label, color=clr)
+                    processed.append(node.label)
+                    children.extend(node.children)
+
+                    node = node.alternative
+
+                num += 1
+                dot.subgraph(s)
+
+            # A node's children as well as children of alternates are presented by solid arrows
+            regular = self.edgeset(alternates)
+            dot.edges(regular)
+            # Alternates to nodes are repesented by dashed arrows
+            dot.attr('edge', style='dashed')
+            alt_edges = self.alt_edgeset()
+            dot.edges(alt_edges)
         return dot
 
     def active_nodeset(self):
         ret = set([self])
         for chld in self.children:
-            ret = ret.union(chld.active_nodeset())
+            if chld != self.alternative:
+                ret = ret.union(chld.active_nodeset())
         return ret
 
     def nodeset(self):
@@ -136,20 +188,44 @@ class CallTree():
 
         if self.alternative:
             ret.add(self.alternative)
-    
+            for chld in self.alternative.children:
+                ret = ret.union(chld.nodeset())
+
         return ret
-        
-        
-    def edgeset(self):
+
+    def edgeset(self, alternates=False):
         if self.children == []:
             return set()
         else:
             sub = set()
             for chld in self.children:
-                if chld.edgeset() is not None:
-                    sub = sub.union(chld.edgeset())
-                sub.add((self.label, chld.label))
+                # If the child node is not an alternative, process it and its children
+                if chld != self.alternative:
+                    sub.add((self.label, chld.label))
+                    sub = sub.union(chld.edgeset(alternates))
+                # if the child node is an alternative, do not process its children if
+                # we do not want to display alternate paths
+                elif alternates:
+                    sub = sub.union(chld.edgeset(alternates))
+            # if the node being processed has an alternative, only process it if we want
+            # to display alternate paths
+            if self.alternative and alternates:
+                for chld in self.alternative.children:
+                    if chld != self.alternative.alternative:
+                        sub.add((self.alternative.label, chld.label))
+                    sub = sub.union(chld.edgeset(alternates))
             return sub
+
+    # Return edges between a node and its altenrative
+    def alt_edgeset(self):
+        alt_edges = set()
+        for chld in self.children:
+            alt_edges = alt_edges.union(chld.alt_edgeset())
+        if self.alternative:
+            alt_edges.add((self.label, self.alternative.label))
+            for chld in self.alternative.children:
+                alt_edges = alt_edges.union(chld.alt_edgeset())
+        return alt_edges
 
 #class RandomCallTree():
 #    def __init__(self, parent, depth, maxwidth):

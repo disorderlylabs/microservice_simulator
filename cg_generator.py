@@ -26,16 +26,17 @@ class CGGenerator():
         #print "CREATE NODE " + str(name) + " optional " + str(optional)
 
         alt = None
+        a = CallTree(name, parent, optional, alt)
+        #print "I just created " + str(a) + " parent " + str(a.parent)
+
         if random.randint(0, maxalternatives) > 0:
             #print "I have an alter ego."
             # I shall have an alter ego
-            alt = self.callgraph(None, maxdepth, maxalternatives-1, True)
+            alt = self.callgraph( a, maxdepth, maxalternatives-1, True)
             #print "NODE " + name + "has alternative " + str(alt)
-        
-        
-        a = CallTree(name, parent, optional, alt)
-        #print "I just created " + str(a) + " parent " + str(a.parent) 
-        
+        if parent is not None:
+            a.add_alternative(alt)
+
         # now decide if we have children, and if so how many.
         #print "flip a coin from 0 - " + str(maxdepth) + " to decide if " + str(a) + "spawns"
         if random.randint(0, maxdepth) > 0:
@@ -53,13 +54,13 @@ class CGGenerator():
                 a.add_child(chld)
         #else:
         #    print "NODE " + name + " is childless"
- 
+
 
         return a
 
     def new_graph(self, maxdepth, maxalternatives):
         # this is hard to get right, bear with me
         # first, decide if I am a leaf. pick a number between 0 and maxdepth; if it's zero, I am a leaf.
-             
+
         return self.callgraph(None, maxdepth, maxalternatives, True)
 
