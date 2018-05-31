@@ -29,12 +29,11 @@ class CGGenerator():
         a = CallTree(name, parent, optional, alt)
         #print "I just created " + str(a) + " parent " + str(a.parent)
 
-        if random.randint(0, maxalternatives) > 0:
+        if parent is not None and not optional and random.randint(0, maxalternatives) > 0:
             #print "I have an alter ego."
             # I shall have an alter ego
             alt = self.callgraph( a, maxdepth, maxalternatives-1, True)
             #print "NODE " + name + "has alternative " + str(alt)
-        if parent is not None:
             a.add_alternative(alt)
 
         # now decide if we have children, and if so how many.
