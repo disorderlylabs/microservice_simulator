@@ -70,6 +70,8 @@ class CallTree():
         if self.label in faultset:
             return self.die(faultset)
         for chld in frozenset(self.children):
+            if chld == self.alternative:
+                continue
             if chld.inject(faultset):
                 return self.die(faultset)
         return False
@@ -84,7 +86,14 @@ class CallTree():
         #    print "ALT " + str(self.alternative)
         if self.alternative and not self.alternative.inject(faultset):
             #print str(self) + " SURVIVED"
+            while str(self.alternative.label) in faultset:
+                tmp = self.alternative
+                if tmp.alternative:
+                    self.alternative = tmp.alternative
             if self.parent is not None:
+                # The alternative is a child of the original instance
+                # Since the original instance is failing, the alternative
+                # now becomes child of the parent
                 self.parent.add_child(self.alternative)
             return False
         else:
