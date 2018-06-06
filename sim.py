@@ -31,6 +31,18 @@ class CallTree():
     def __str__(self):
         return self.label + "(" + ",".join(map(lambda x: x.label or "NONE", self.children)) + ") [" + str(self.parent) + "]"
 
+    def min_failure_scenario_size(self):
+        cardinality = 0
+        for chld in self.children:
+            if chld.optional == True:
+                continue
+            cardinality += 1
+            tmp = self.alternative
+            while tmp != None:
+                cardinality += 1
+                tmp = tmp.alternative
+        return cardinality
+
     def add_parent(self, parent):
         self.parent = parent
 
