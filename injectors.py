@@ -42,6 +42,29 @@ class FaultInjector:
         print len(self.graph.active_nodeset())
         return (2 ** len(self.graph.active_nodeset())-1)
 
+class HeuristicFaultInjector:
+    def  __init__(self, graph):
+        self.graph = graph
+        self.faults_injected = []
+        self.nodes = []
+
+    def next_fault(self):
+        if len(self.faults_injected) == 0:
+            self.nodes = map(lambda x: x.label, self.graph.children)
+        self.nodes.sort(key=natural_sort_key)
+        return chain.from_iterable(combinations(self.nodes, r) for r in range(1, len(self.nodes)+1))
+
+    def update_heuristic(self, new_graph):
+        for chld in new_graph.children:
+            lbl = chld.label
+            if lbl not in self.nodes:
+                self.nodes.append(lbl)
+
+    def add_faults_injected(self, fault):
+        self.faults_injected.append(fault)
+
+    def get_faults_injected(self):
+        return self.faults_injected
 
 class DemonicFaultInjector:
     def __init__(self, graph):
